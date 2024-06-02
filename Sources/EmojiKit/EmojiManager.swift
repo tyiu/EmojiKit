@@ -37,7 +37,7 @@ public enum EmojiManager {
         public static func getSupportedVersion() -> Version {
             if #available(iOS 17.4, *) {
                 return .v15_1
-            } else  if #available(iOS 16.4, *) {
+            } else if #available(iOS 16.4, *) {
                 return .v15
             } else if #available(iOS 15.4, *) {
                 return .v14
@@ -59,25 +59,25 @@ public enum EmojiManager {
             var filteredEmojis: [UnicodeEmojiCategory] = []
             var appleCategories: [AppleEmojiCategory] = []
             for category in result {
-                let supportedEmojis = category.values.filter({
-                    showAllVariations ? true : isNeutralEmoji(for: $0)
+                let supportedEmojis = category.emojis.filter({
+                    showAllVariations ? true : isNeutralEmoji(for: $0.key)
                 })
-                let unicodeCategory = UnicodeEmojiCategory(name: category.name, values: supportedEmojis)
+                let unicodeCategory = UnicodeEmojiCategory(name: category.name, emojis: supportedEmojis)
                 filteredEmojis.append(unicodeCategory)
 
                 if shouldMergeCategory(category), let index = appleCategories.firstIndex(where: { $0.name == .smileysAndPeople }) {
                     if category.name == .smileysAndEmotions {
-                        let oldValues = appleCategories[index].values
-                        appleCategories[index].values = supportedEmojis
-                        appleCategories[index].values.append(contentsOf: oldValues)
+                        let oldValues = appleCategories[index].emojis
+                        appleCategories[index].emojis = supportedEmojis
+                        appleCategories[index].emojis.merge(oldValues) { (current, _) in current }
                     } else {
-                        appleCategories[index].values.append(contentsOf: supportedEmojis)
+                        appleCategories[index].emojis.merge(supportedEmojis) { (current, _) in current }
                     }
                 } else {
                     guard let appleCategory = unicodeCategory.appleCategory else {
                         continue
                     }
-                    appleCategories.append(AppleEmojiCategory(name: appleCategory, values: supportedEmojis))
+                    appleCategories.append(AppleEmojiCategory(name: appleCategory, emojis: supportedEmojis))
                 }
             }
             return appleCategories.sorted(by: { $0.name.order < $1.name.order })

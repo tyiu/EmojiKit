@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "EmojiKit",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13), .iOS(.v15), .watchOS(.v8), .tvOS(.v15)],
     products: [
         .library(
@@ -13,6 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-collections.git", .upToNextMajor(from:  "1.1.0")),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.6.0"),
     ],
@@ -20,13 +22,19 @@ let package = Package(
         .executableTarget(
             name: "EmojiSourceKit",
             dependencies: [
+                .product(name: "OrderedCollections", package: "swift-collections"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "SwiftSoup", package: "SwiftSoup"),
                 .target(name: "EmojiKit")
             ]),
         .target(
-            name: "EmojiKit", resources: [
+            name: "EmojiKit",
+            dependencies: [
+                .product(name: "OrderedCollections", package: "swift-collections")
+            ],
+            resources: [
                 .process("Resources")
-        ])
+            ]
+        )
     ]
 )

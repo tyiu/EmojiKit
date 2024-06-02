@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OrderedCollections
 
 public class UnicodeEmojiCategory: Codable {
 
@@ -49,11 +50,11 @@ public class UnicodeEmojiCategory: Codable {
 
     public let name: Name
     public let appleCategory: AppleEmojiCategory.Name?
-    public var values: [String]
+    public var emojis: OrderedDictionary<String, Emoji>
 
-    public init(name: Name, values: [String]) {
+    public init(name: Name, emojis: OrderedDictionary<String, Emoji>) {
         self.name = name
         self.appleCategory = name.appleName
-        self.values = values
+        self.emojis = emojis
     }
 }
