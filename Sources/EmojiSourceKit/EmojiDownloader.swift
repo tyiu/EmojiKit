@@ -123,7 +123,11 @@ struct EmojiDownloader: ParsableCommand, AsyncParsableCommand {
     }
 
     func getTemporaryURLForEmojiList(version: EmojiManager.Version) async -> URL? {
-        return await load(urlString: "https://unicode.org/Public/emoji/\(version.versionIdentifier)/emoji-test.txt")
+        if version == .v15 {
+            return await load(urlString: "https://raw.githubusercontent.com/unicode-org/cldr/ed4f82917078fb71f093977a973b30a6151fa28b/tools/cldr-code/src/main/resources/org/unicode/cldr/util/data/emoji/emoji-test.txt")
+        } else {
+            return await load(urlString: "https://unicode.org/Public/emoji/\(version.versionIdentifier)/emoji-test.txt")
+        }
     }
 
     func getTemporaryURLForEmojiCounts(version: EmojiManager.Version) async -> URL? {
