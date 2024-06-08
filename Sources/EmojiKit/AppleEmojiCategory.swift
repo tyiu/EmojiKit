@@ -8,17 +8,26 @@
 import Foundation
 import OrderedCollections
 
-public class AppleEmojiCategory: Codable {
+public class AppleEmojiCategory: Codable, Hashable {
+    public static func == (lhs: AppleEmojiCategory, rhs: AppleEmojiCategory) -> Bool {
+        lhs.name == rhs.name && lhs.emojis == rhs.emojis
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+        hasher.combine(emojis)
+    }
+
 
     public enum Name: String, CaseIterable, Codable {
-        case flags = "Flags"
-        case activity = "Activity"
-        case objects = "Objects"
-        case travelAndPlaces = "Travel & Places"
-        case symbols = "Symbols"
-        case animalsAndNature = "Animals & Nature"
-        case foodAndDrink = "Food & Drink"
-        case smileysAndPeople = "Smileys & People"
+        case flags = "flags"
+        case activity = "activity"
+        case objects = "objects"
+        case travelAndPlaces = "travelAndPlaces"
+        case symbols = "symbols"
+        case animalsAndNature = "animalsAndNature"
+        case foodAndDrink = "foodAndDrink"
+        case smileysAndPeople = "smileysAndPeople"
 
         public static var orderedCases: [Name] {
             return allCases.sorted(by: { $0.order < $1.order })
@@ -43,6 +52,15 @@ public class AppleEmojiCategory: Codable {
             case .smileysAndPeople:
                 return 1
             }
+        }
+
+        public var localizedName: String {
+            NSLocalizedString(
+                self.rawValue,
+                tableName: "EmojiKitLocalizable",
+                bundle: .module,
+                comment: ""
+            )
         }
     }
 
