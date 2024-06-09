@@ -9,10 +9,10 @@ import Foundation
 
 public struct Emoji: Codable, Hashable {
     public let value: String
-    public let keywords: [String]
+    public let localizedKeywords: [String: [String]]
 
-    public init(value: String, keywords: [String]) {
+    public init(value: String, localizedKeywords: [String: [String]]) {
         self.value = value
-        self.keywords = keywords
+        self.localizedKeywords = localizedKeywords
     }
 }

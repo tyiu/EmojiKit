@@ -45,43 +45,54 @@ struct EmojiDownloader: ParsableCommand, AsyncParsableCommand {
             return
         }
 
-        guard let cldrAnnotationsURL = await getURLForCLDRAnnotations() else {
-            return
-        }
-
-        guard let cldrAnnotationsDerivedURL = await getURLForCLDRAnnotationsDerived() else {
-            return
-        }
-
         print("🎉", "Successfully retrieved temporary URLs for version \(version.rawValue).\n")
 
         print("⚙️", "Starting to parse content...\n")
 
-        print("Trying CLDR data at \(cldrAnnotationsURL)\n")
+        var allCLDRAnnotations = [String: Emoji]()
+        for locale in supportedLocales {
+            guard let cldrAnnotationsURL = await getURLForCLDRAnnotations(locale: locale) else {
+                return
+            }
 
-        let cldrAnnotationsHandle = try FileHandle(forReadingFrom: cldrAnnotationsURL)
-        guard let cldrAnnotationsData = try cldrAnnotationsHandle.readToEnd() else {
-            print("⚠️", "Could not read CLDR annotations data.\n")
-            return
+            guard let cldrAnnotationsDerivedURL = await getURLForCLDRAnnotationsDerived(locale: locale) else {
+                return
+            }
+
+            print("Trying CLDR data at \(cldrAnnotationsURL)\n")
+
+            let cldrAnnotationsHandle = try FileHandle(forReadingFrom: cldrAnnotationsURL)
+            guard let cldrAnnotationsData = try cldrAnnotationsHandle.readToEnd() else {
+                print("⚠️", "Could not read CLDR annotations data.\n")
+                return
+            }
+
+            let cldrAnnotationsMap = emojisMap(data: cldrAnnotationsData, locale: locale) ?? [:]
+
+            print("Trying CLDR data at \(cldrAnnotationsDerivedURL)\n")
+
+            let cldrAnnotationsDerivedHandle = try FileHandle(forReadingFrom: cldrAnnotationsDerivedURL)
+            guard let cldrAnnotationsDerivedData = try cldrAnnotationsDerivedHandle.readToEnd() else {
+                print("⚠️", "Could not read CLDR annotations derived data.\n")
+                return
+            }
+            let cldrAnnotationsDerivedMap = emojisMap(data: cldrAnnotationsDerivedData, locale: locale) ?? [:]
+
+            allCLDRAnnotations.merge(cldrAnnotationsMap) { (current, new) in
+                let combinedKeywords = current.localizedKeywords.merging(new.localizedKeywords) { (current, _) in current }
+                return Emoji(value: current.value, localizedKeywords: combinedKeywords)
+            }
+
+            allCLDRAnnotations.merge(cldrAnnotationsDerivedMap) { (current, new) in
+                let combinedKeywords = current.localizedKeywords.merging(new.localizedKeywords) { (current, _) in current }
+                return Emoji(value: current.value, localizedKeywords: combinedKeywords)
+            }
         }
-
-        let cldrAnnotationsMap = emojisMap(data: cldrAnnotationsData) ?? [:]
-
-        print("Trying CLDR data at \(cldrAnnotationsDerivedURL)\n")
-
-        let cldrAnnotationsDerivedHandle = try FileHandle(forReadingFrom: cldrAnnotationsDerivedURL)
-        guard let cldrAnnotationsDerivedData = try cldrAnnotationsDerivedHandle.readToEnd() else {
-            print("⚠️", "Could not read CLDR annotations derived data.\n")
-            return
-        }
-        let cldrAnnotationsDerivedMap = emojisMap(data: cldrAnnotationsDerivedData) ?? [:]
-
-        let allCLDRAnnotationsMap = cldrAnnotationsMap.merging(cldrAnnotationsDerivedMap) { (current, _) in current }
 
         let parser = UnicodeParser()
 
         do {
-            let emojisByCategory: [UnicodeEmojiCategory] = try await parser.parseEmojiList(for: emojiListURL, emojisMap: allCLDRAnnotationsMap)
+            let emojisByCategory: [UnicodeEmojiCategory] = try await parser.parseEmojiList(for: emojiListURL, emojisMap: allCLDRAnnotations)
 
             let emojiCounts: [UnicodeEmojiCategory.Name: Int] = parser.parseCountHTML(for: emojiCountsURL)
 
@@ -100,10 +111,9 @@ struct EmojiDownloader: ParsableCommand, AsyncParsableCommand {
         }
     }
 
-    func emojisMap(data: Data) -> [String: Emoji]? {
-        print("emojisMap\n")
+    func emojisMap(data: Data, locale: String) -> [String: Emoji]? {
         let parser = XMLParser(data: data)
-        let handler = CLDRAnnotationsXMLHandler()
+        let handler = CLDRAnnotationsXMLHandler(locale: locale)
         parser.delegate = handler
 
         if parser.parse() {
@@ -114,12 +124,175 @@ struct EmojiDownloader: ParsableCommand, AsyncParsableCommand {
         }
     }
 
-    func getURLForCLDRAnnotations() async -> URL? {
-        return await load(urlString: "https://raw.githubusercontent.com/unicode-org/cldr/c1dc8c7ef6584668345cf741e51b1722d8114bc8/common/annotations/en.xml")
+    let supportedLocales = [
+        "af",
+        "am",
+        "ar",
+        "ar_SA",
+        "as",
+        "ast",
+        "az",
+        "be",
+        "bew",
+        "bg",
+        "bgn",
+        "bn",
+        "br",
+        "bs",
+        "ca",
+        "ccp",
+        "ceb",
+        "chr",
+        "ckb",
+        "cs",
+        "cv",
+        "cy",
+        "da",
+        "de",
+        "de_CH",
+        "doi",
+        "dsb",
+        "el",
+        "en",
+        "en_001",
+        "en_AU",
+        "en_CA",
+        "en_GB",
+        "en_IN",
+        "es",
+        "es_419",
+        "es_MX",
+        "es_US",
+        "et",
+        "eu",
+        "fa",
+        "ff",
+        "ff_Adlm",
+        "fi",
+        "fil",
+        "fo",
+        "fr",
+        "fr_CA",
+        "ga",
+        "gd",
+        "gl",
+        "gu",
+        "ha",
+        "ha_NE",
+        "he",
+        "hi",
+        "hi_Latn",
+        "hr",
+        "hsb",
+        "hu",
+        "hy",
+        "ia",
+        "id",
+        "ig",
+        "is",
+        "it",
+        "ja",
+        "jv",
+        "ka",
+        "kab",
+        "kk",
+        "kl",
+        "km",
+        "kn",
+        "ko",
+        "kok",
+        "ku",
+        "ky",
+        "lb",
+        "lij",
+        "lo",
+        "lt",
+        "lv",
+        "mai",
+        "mi",
+        "mk",
+        "ml",
+        "mn",
+        "mni",
+        "mr",
+        "ms",
+        "mt",
+        "my",
+        "nb",
+        "ne",
+        "nl",
+        "nn",
+        "no",
+        "nso",
+        "oc",
+        "om",
+        "or",
+        "pa",
+        "pa_Arab",
+        "pcm",
+        "pl",
+        "ps",
+        "pt",
+        "pt_PT",
+        "qu",
+        "quc",
+        "rhg",
+        "rm",
+        "ro",
+        "root",
+        "ru",
+        "rw",
+        "sa",
+        "sat",
+        "sc",
+        "sd",
+        "si",
+        "sk",
+        "sl",
+        "so",
+        "sq",
+        "sr",
+        "sr_Cyrl",
+        "sr_Cyrl_BA",
+        "sr_Latn",
+        "sr_Latn_BA",
+        "su",
+        "sv",
+        "sw",
+        "sw_KE",
+        "ta",
+        "te",
+        "tg",
+        "th",
+        "ti",
+        "tk",
+        "tn",
+        "to",
+        "tr",
+        "tt",
+        "ug",
+        "uk",
+        "ur",
+        "uz",
+        "vi",
+        "wo",
+        "xh",
+        "yo",
+        "yo_BJ",
+        "yue",
+        "yue_Hans",
+        "zh",
+        "zh_Hant",
+        "zh_Hant_HK",
+        "zu"
+    ]
+
+    func getURLForCLDRAnnotations(locale: String) async -> URL? {
+        return await load(urlString: "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotations/\(locale).xml")
     }
 
-    func getURLForCLDRAnnotationsDerived() async -> URL? {
-        return await load(urlString: "https://raw.githubusercontent.com/unicode-org/cldr/c1dc8c7ef6584668345cf741e51b1722d8114bc8/common/annotationsDerived/en.xml")
+    func getURLForCLDRAnnotationsDerived(locale: String) async -> URL? {
+        return await load(urlString: "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotationsDerived/\(locale).xml")
     }
 
     func getTemporaryURLForEmojiList(version: EmojiManager.Version) async -> URL? {

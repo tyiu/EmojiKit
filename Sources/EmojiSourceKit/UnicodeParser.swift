@@ -19,25 +19,6 @@ class UnicodeParser {
         case minimallyQualified = "minimally-qualified"
     }
 
-    func parseEmojis(for fileUrl: URL) async throws {
-        URLSession.shared.dataTask(with: fileUrl) { data, response, error in
-            guard let data = data, error == nil else {
-                print("Failed to download data: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-
-            // Parse the downloaded XML data
-            self.parseXML(data: data)
-        }
-    }
-
-    func parseXML(data: Data) {
-        let parser = XMLParser(data: data)
-        let handler = CLDRAnnotationsXMLHandler()
-        parser.delegate = handler
-        parser.parse()
-    }
-
     func parseEmojiList(for fileUrl: URL, emojisMap: [String: Emoji]) async throws -> [UnicodeEmojiCategory] {
         let handle = try FileHandle(forReadingFrom: fileUrl)
         var currentGroup: UnicodeEmojiCategory.Name = .activities
@@ -89,21 +70,21 @@ class UnicodeParser {
 
                 if multiHexEmoji.isEmpty == false {
                     if let mapLookup = emojisMap[makeEmojiUnqualified(emoji: multiHexEmoji)] {
-                        if mapLookup.keywords.isEmpty == true {
+                        if mapLookup.localizedKeywords.isEmpty == true {
                             print("Could not find keywords in emojis map for multiHex: \(multiHexEmoji)\n")
                         }
-                        emojisByGroup[currentGroup]?[multiHexEmoji] = Emoji(value: multiHexEmoji, keywords: mapLookup.keywords)
+                        emojisByGroup[currentGroup]?[multiHexEmoji] = Emoji(value: multiHexEmoji, localizedKeywords: mapLookup.localizedKeywords)
                     } else {
                         print("Could not find in emojis map at all for multiHex: \(multiHexEmoji)\n")
-                        emojisByGroup[currentGroup]?[multiHexEmoji] = Emoji(value: multiHexEmoji, keywords: [])
+                        emojisByGroup[currentGroup]?[multiHexEmoji] = Emoji(value: multiHexEmoji, localizedKeywords: [:])
                     }
                 }
             } else {
                 if let unicode = hexString.asEmoji(), unicode.isEmpty == false {
                     if let mapLookup = emojisMap[makeEmojiUnqualified(emoji: unicode)] {
-                        emojisByGroup[currentGroup]?[unicode] = Emoji(value: unicode, keywords: mapLookup.keywords)
+                        emojisByGroup[currentGroup]?[unicode] = Emoji(value: unicode, localizedKeywords: mapLookup.localizedKeywords)
                     } else {
-                        emojisByGroup[currentGroup]?[unicode] = Emoji(value: unicode, keywords: [])
+                        emojisByGroup[currentGroup]?[unicode] = Emoji(value: unicode, localizedKeywords: [:])
                     }
                 }
             }

@@ -9,15 +9,21 @@ import Foundation
 import EmojiKit
 
 class CLDRAnnotationsXMLHandler: NSObject, XMLParserDelegate {
+    let locale: String
+
     var currentElement = ""
     var currentEmoji: Emoji?
     var emojis = [Emoji]()
     var currentEmojiValue = ""
 
+    init(locale: String) {
+        self.locale = locale
+    }
+
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         if elementName == "annotation" && attributeDict["type"] != "tts" {
            if let cp = attributeDict["cp"] {
-               currentEmoji = Emoji(value: cp, keywords: [])
+               currentEmoji = Emoji(value: cp, localizedKeywords: [:])
                currentEmojiValue = ""
             }
         }
@@ -33,8 +39,9 @@ class CLDRAnnotationsXMLHandler: NSObject, XMLParserDelegate {
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "annotation" {
             if let emoji = currentEmoji {
-                let values = currentEmojiValue.split(separator: "|").map { $0.trim() }
-                emojis.append(Emoji(value: emoji.value, keywords: values))
+                var localizedKeywords = [String: [String]]()
+                localizedKeywords[locale] = currentEmojiValue.split(separator: "|").map { $0.trim() }
+                emojis.append(Emoji(value: emoji.value, localizedKeywords: localizedKeywords))
             }
         }
         currentElement = ""
