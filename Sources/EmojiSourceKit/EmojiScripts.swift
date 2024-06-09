@@ -13,7 +13,7 @@ struct EmojiScripts: ParsableCommand, AsyncParsableCommand {
 
     #if os(macOS)
     static let configuration: CommandConfiguration = CommandConfiguration(
-        commandName: "emojis",
+        commandName: "emojiSourceKit",
         abstract: "Manage Emojis from Unicode",
         subcommands: [
             EmojiDownloader.self
