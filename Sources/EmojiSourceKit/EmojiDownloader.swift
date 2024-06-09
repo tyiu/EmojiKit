@@ -50,7 +50,7 @@ struct EmojiDownloader: ParsableCommand, AsyncParsableCommand {
         print("⚙️", "Starting to parse content...\n")
 
         var allCLDRAnnotations = [String: Emoji]()
-        for locale in supportedLocales {
+        for locale in EmojiDownloader.supportedLocales {
             guard let cldrAnnotationsURL = await getURLForCLDRAnnotations(locale: locale) else {
                 return
             }
@@ -124,7 +124,7 @@ struct EmojiDownloader: ParsableCommand, AsyncParsableCommand {
         }
     }
 
-    let supportedLocales = [
+    static let supportedLocales = [
         "af",
         "am",
         "ar",
