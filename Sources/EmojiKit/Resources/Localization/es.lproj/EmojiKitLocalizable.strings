@@ -20,12 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-"frequentlyUsed" = "USADOS CON FRECUENCIA";
-"smileysAndPeople" = "EMOTICONOS Y PERSONAS";
+"frequentlyUsed" = "MÁS FRECUENTES";
+"smileysAndPeople" = "CARAS Y PERSONAS";
 "animalsAndNature" = "ANIMALES Y NATURALEZA";
-"foodAndDrink" = "COMIDA Y BEBIDA";
-"activity" = "ACTIVIDADES";
-"travelAndPlaces" = "VIAJES Y DESTINOS";
+"foodAndDrink" = "ALIMENTOS Y BEBIDAS";
+"activity" = "ACTIVIDAD";
+"travelAndPlaces" = "VIAJES Y LUGARES";
 "objects" = "OBJETOS";
 "symbols" = "SÍMBOLOS";
 "flags" = "BANDERAS";
