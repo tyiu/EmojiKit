@@ -1,6 +1,12 @@
 MIT License
 
+Copyright (c) 2024 Terry Yiu
+
+Fork of https://github.com/niklasamslgruber/EmojiKit
 Copyright (c) 2023 Niklas Amslgruber
+
+Apple emoji category name localizations forked from https://github.com/izyumkin/MCEmojiPicker
+Copyright (c) 2022 Ivan Izyumkin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
