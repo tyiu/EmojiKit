@@ -19,7 +19,7 @@ In most cases it is enough to just use the `EmojiKit` for your app. The `EmojiSo
 ##### SwiftPM
 
 ```
-https://github.com/niklasamslgruber/EmojiKit
+https://github.com/tyiu/EmojiKit
 ```
 
 ### Usage
@@ -89,3 +89,8 @@ Currently only to Unicode releases are supported (Version 14 and 15). If you wan
 
 	In that case make sure that you added the `emojis_vX.json` file to your Xcode project. The file name must match the version you're trying to fetch emojis for, e.g. for version 12 the file name must be `emojis_v12.json`. Additionally make sure that your JSON file is added under `Build Phase - Copy Bundle Resources` for each target where you want to use the `EmojiManager`.
 
+## Acknowledgements
+
+This EmojiKit Swift package was forked from [niklasamslgruber/EmojiKit](https://github.com/niklasamslgruber/EmojiKit).
+
+Some of the localization files for Apple emoji category names were copied from [izyumkin/MCEmojiPicker](https://github.com/izyumkin/MCEmojiPicker).
