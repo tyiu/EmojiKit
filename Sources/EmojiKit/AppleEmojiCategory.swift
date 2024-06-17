@@ -16,6 +16,7 @@ public class AppleEmojiCategory: Codable, Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(name)
         hasher.combine(emojis)
+        hasher.combine(variations)
     }
 
 
@@ -66,10 +67,12 @@ public class AppleEmojiCategory: Codable, Hashable {
 
     public let name: Name
     public var emojis: OrderedDictionary<String, Emoji>
+    public var variations: [String: [Emoji]]
 
-    public init(name: Name, emojis: OrderedDictionary<String, Emoji>) {
+    public init(name: Name, emojis: OrderedDictionary<String, Emoji>, variations: [String: [Emoji]]) {
         self.name = name
         self.emojis = emojis
+        self.variations = variations
     }
 
 }

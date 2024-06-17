@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OrderedCollections
 
 public typealias EmojiCategory = AppleEmojiCategory
 
@@ -47,6 +48,32 @@ public enum EmojiManager {
         }
     }
 
+    // When skin tone modifiers are stripped from some emojis,
+    // they don't have the same Unicode scalar values as the neutral version.
+    // We need to maintain a manual mapping so that the lists of variations are accurate.
+    private static let emojiSpecialMapping: [[UInt32]: UInt32] = [
+        [0x1FAF1, 0x200D, 0x1FAF2]: 0x1F91D, // 🤝 handshake
+        [0x1F469, 0x200D, 0x1F91D, 0x200D, 0x1F469]: 0x1F46D, // 👭 women holding hands
+        [0x1F469, 0x200D, 0x1F91D, 0x200D, 0x1F468]: 0x1F46B, // 👫 woman and man holding hands
+        [0x1F468, 0x200D, 0x1F91D, 0x200D, 0x1F468]: 0x1F46C, // 👬 men holding hands
+        [0x1F9D1, 0x200D, 0x2764, 0x200D, 0x1F48B, 0x200D, 0x1F9D1]: 0x1F48F, // 💏 kiss: person, person
+        [0x1F9D1, 0x200D, 0x2764, 0x200D, 0x1F9D1]: 0x1F491, // 💑 couple with heart: person, person
+    ]
+
+    private static func uint32ToEmoji(_ value: UInt32) -> String? {
+        // Create a Unicode scalar from the UInt32 value
+        guard let scalar = UnicodeScalar(value) else {
+            print("Invalid Unicode scalar value")
+            return nil
+        }
+
+        // Create a Character from the Unicode scalar
+        let character = Character(scalar)
+
+        // Convert the Character to a String and return it
+        return String(character)
+    }
+
     /// Returns all emojis for a specific version
     /// - Parameters:
     ///   - version: The specific version you want to fetch (default: the highest supported version for a device's iOS version)
@@ -59,25 +86,49 @@ public enum EmojiManager {
             var filteredEmojis: [UnicodeEmojiCategory] = []
             var appleCategories: [AppleEmojiCategory] = []
             for category in result {
-                let supportedEmojis = category.emojis.filter({
-                    showAllVariations ? true : isNeutralEmoji(for: $0.key)
-                })
+                var variations = [String: [Emoji]]()
+                var supportedEmojis = OrderedDictionary<String, Emoji>()
+                category.emojis.forEach {
+                    if isNeutralEmoji(for: $0.key) {
+                        supportedEmojis[$0.key] = $0.value
+                    } else if showAllVariations {
+                        var unqualifiedNeutralEmoji = unqualifiedNeutralEmoji(for: $0.key)
+
+                        let unicodeScalars = unqualifiedNeutralEmoji.unicodeScalars.map { $0.value }
+                        if let actualUnqualifiedNeutralScalar = emojiSpecialMapping[unicodeScalars],
+                           let actualUnqualifiedNeutralEmoji = uint32ToEmoji(actualUnqualifiedNeutralScalar) {
+                            unqualifiedNeutralEmoji = String(actualUnqualifiedNeutralEmoji)
+                        }
+
+                        if let variationsForEmoji = variations[unqualifiedNeutralEmoji] {
+                            variations[unqualifiedNeutralEmoji] = variationsForEmoji + [$0.value]
+                        } else {
+                            variations[unqualifiedNeutralEmoji] = [$0.value]
+                        }
+                    }
+                }
+
                 let unicodeCategory = UnicodeEmojiCategory(name: category.name, emojis: supportedEmojis)
                 filteredEmojis.append(unicodeCategory)
 
                 if shouldMergeCategory(category), let index = appleCategories.firstIndex(where: { $0.name == .smileysAndPeople }) {
                     if category.name == .smileysAndEmotions {
-                        let oldValues = appleCategories[index].emojis
+                        let oldEmojis = appleCategories[index].emojis
                         appleCategories[index].emojis = supportedEmojis
-                        appleCategories[index].emojis.merge(oldValues) { (current, _) in current }
+                        appleCategories[index].emojis.merge(oldEmojis) { (current, _) in current }
+
+                        let oldVariations = appleCategories[index].variations
+                        appleCategories[index].variations = variations
+                        appleCategories[index].variations.merge(oldVariations) { (current, _) in current }
                     } else {
                         appleCategories[index].emojis.merge(supportedEmojis) { (current, _) in current }
+                        appleCategories[index].variations.merge(variations) { (current, _) in current }
                     }
                 } else {
                     guard let appleCategory = unicodeCategory.appleCategory else {
                         continue
                     }
-                    appleCategories.append(AppleEmojiCategory(name: appleCategory, emojis: supportedEmojis))
+                    appleCategories.append(AppleEmojiCategory(name: appleCategory, emojis: supportedEmojis, variations: variations))
                 }
             }
             return appleCategories.sorted(by: { $0.name.order < $1.name.order })
@@ -89,19 +140,32 @@ public enum EmojiManager {
         return category.name == .smileysAndEmotions || category.name == .peopleAndBody
     }
 
-    private static func isNeutralEmoji(for emoji: String) -> Bool {
-        let unicodes = getUnicodes(emoji: emoji)
-        let colors = ["1F3FB", "1F3FC", "1F3FD", "1F3FE", "1F3FF"]
+    private static let skinToneRange: ClosedRange<UInt32> = 0x1F3FB...0x1F3FF
 
-        for color in colors where unicodes.contains(color) {
-            return false
-        }
-        return true
+    public static func isNeutralEmoji(for emojiValue: String) -> Bool {
+        return emojiValue.unicodeScalars.allSatisfy { !skinToneRange.contains($0.value) }
     }
 
-    private static func getUnicodes(emoji: String) -> [String] {
-        let unicodeScalars = emoji.unicodeScalars
-        let unicodes = unicodeScalars.map { $0.value }
-        return unicodes.map { String($0, radix: 16, uppercase: true) }
+    public static func isSkinToneModifier(scalar: Unicode.Scalar) -> Bool {
+        return skinToneRange.contains(scalar.value)
+    }
+
+    public static func neutralEmoji(for emojiValue: String) -> String {
+        let filteredScalars = emojiValue.unicodeScalars.filter { !isSkinToneModifier(scalar: $0) }
+        return String(String.UnicodeScalarView(filteredScalars))
+    }
+
+    public static func unqualifiedNeutralEmoji(for emoji: String) -> String {
+        let variationSelector: Character = "\u{FE0F}"
+        var unqualifiedEmoji = ""
+
+        for scalar in neutralEmoji(for: emoji).unicodeScalars {
+            let character = Character(scalar)
+            if character != variationSelector {
+                unqualifiedEmoji.append(character)
+            }
+        }
+
+        return unqualifiedEmoji
     }
 }
