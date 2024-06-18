@@ -92,13 +92,7 @@ public enum EmojiManager {
                     if isNeutralEmoji(for: $0.key) {
                         supportedEmojis[$0.key] = $0.value
                     } else if showAllVariations {
-                        var unqualifiedNeutralEmoji = unqualifiedNeutralEmoji(for: $0.key)
-
-                        let unicodeScalars = unqualifiedNeutralEmoji.unicodeScalars.map { $0.value }
-                        if let actualUnqualifiedNeutralScalar = emojiSpecialMapping[unicodeScalars],
-                           let actualUnqualifiedNeutralEmoji = uint32ToEmoji(actualUnqualifiedNeutralScalar) {
-                            unqualifiedNeutralEmoji = String(actualUnqualifiedNeutralEmoji)
-                        }
+                        let unqualifiedNeutralEmoji = unqualifiedNeutralEmoji(for: $0.key)
 
                         if let variationsForEmoji = variations[unqualifiedNeutralEmoji] {
                             variations[unqualifiedNeutralEmoji] = variationsForEmoji + [$0.value]
@@ -164,6 +158,12 @@ public enum EmojiManager {
             if character != variationSelector {
                 unqualifiedEmoji.append(character)
             }
+        }
+
+        let unicodeScalars = unqualifiedEmoji.unicodeScalars.map { $0.value }
+        if let actualUnqualifiedNeutralScalar = emojiSpecialMapping[unicodeScalars],
+           let actualUnqualifiedNeutralEmoji = uint32ToEmoji(actualUnqualifiedNeutralScalar) {
+            return String(actualUnqualifiedNeutralEmoji)
         }
 
         return unqualifiedEmoji

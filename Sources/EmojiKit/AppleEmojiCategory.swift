@@ -21,14 +21,15 @@ public class AppleEmojiCategory: Codable, Hashable {
 
 
     public enum Name: String, CaseIterable, Codable {
-        case flags = "flags"
-        case activity = "activity"
-        case objects = "objects"
-        case travelAndPlaces = "travelAndPlaces"
-        case symbols = "symbols"
+        case frequentlyUsed = "frequentlyUsed"
+        case smileysAndPeople = "smileysAndPeople"
         case animalsAndNature = "animalsAndNature"
         case foodAndDrink = "foodAndDrink"
-        case smileysAndPeople = "smileysAndPeople"
+        case activity = "activity"
+        case travelAndPlaces = "travelAndPlaces"
+        case objects = "objects"
+        case symbols = "symbols"
+        case flags = "flags"
 
         public static var orderedCases: [Name] {
             return allCases.sorted(by: { $0.order < $1.order })
@@ -36,22 +37,24 @@ public class AppleEmojiCategory: Codable, Hashable {
 
         public var order: Int {
             switch self {
-            case .flags:
-                return 8
-            case .activity:
-                return 4
-            case .objects:
-                return 6
-            case .travelAndPlaces:
-                return 5
-            case .symbols:
-                return 7
+            case .frequentlyUsed:
+                return 0
+            case .smileysAndPeople:
+                return 1
             case .animalsAndNature:
                 return 2
             case .foodAndDrink:
                 return 3
-            case .smileysAndPeople:
-                return 1
+            case .activity:
+                return 4
+            case .travelAndPlaces:
+                return 5
+            case .objects:
+                return 6
+            case .symbols:
+                return 7
+            case .flags:
+                return 8
             }
         }
 
